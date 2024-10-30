@@ -1,0 +1,372 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"></script>
+    <script src="http://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    
+    
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #legend3 {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    fill: #151313;
+  }
+  /* Styles pour l'infobulle */
+  #tooltip3 {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 8px;
+    font-size: 12px;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+  }
+        #svg {
+        overflow: visible;
+        margin: 20px 20px;
+         }
+      
+      a {
+        color: #00838f;
+      }
+
+         #tooltip {
+            position: absolute;
+            background-color: rgb(147, 205, 232);
+            color: rgb(10, 10, 10);
+            padding: 8px;
+            font-size: 12px;
+            z-index: 10;
+            border-radius: 5px;
+            visibility: hidden;
+
+        }
+        #tooltip2 {
+            position: absolute;
+            background-color: #c6a7e2;
+            color: rgb(10, 10, 10);
+            padding: 8px;
+            font-size: 12px;
+            z-index: 10;
+            border-radius: 5px;
+            visibility: visible;
+
+        }
+        #tooltip1 {
+            position: absolute;
+            background-color: #c6a7e2;
+            color: rgb(10, 10, 10);
+            padding: 8px;
+            font-size: 12px;
+            z-index: 10;
+            border-radius: 5px;
+            visibility: hidden;
+
+        }
+        body {
+            font-family: "montserrat", Arial, Helvetica, sans-serif;
+            background-color: #fff;
+            margin: 10;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .dashboard-container {
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 5px;
+            max-width: 97%;
+            width: 100vw;
+            height: 90vh;
+            overflow-x: auto;
+        }
+
+        .header {
+            background-color: #2f6595;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .author-credentials {
+            text-align: center;
+            font-style: italic;
+            margin-bottom: 20px;
+            color: hsl(0, 90%, 4%);
+        }
+        .legend .legend-gradient {
+            fill: url(#gradient);
+        }
+
+        .legend .legend-axis .tick line {
+            stroke: #999;
+        }
+
+        .legend .legend-label {
+            font-size: 12px;
+            fill: #0f0e0e;
+        }
+
+        #map {
+            height: 400px;
+        }
+
+        /* Add shadows to card bodies */
+        .card-body {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* border: 0.2px solid #0e0d0d; */
+        }
+       
+
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="container-fluid">
+            <div class="header">Exploration des données sur les athlètes olympiques </div>
+            <div class="author-credentials">Par: Hajer Zitouni</div>
+            <div class="row">
+                <div class="col-lg-6 col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h6 class="m-0">Distribution par sexe des athlètes </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Add SVG element container -->
+                            <div id="interactiveBar"></div>
+                            <div id="tooltip1"></div>
+        
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="col-lg-6 col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h6 class="m-0">Distrubtion des Médailles d'Or </h6>
+                        
+                        </div>
+                        
+                        <div class="card-body">
+                            <div id="piechart"></div>
+                            <div id="tooltip2"></div>
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header">Distrubtion des athlètes par Pays:</div>
+                        <div class="card-body">
+                            <div id="chart-container"></div>
+                            <div id="tooltip"></div>
+                            <div class="zoom-buttons">
+                                <button id="zoom-in">+</button>
+                                <button id="zoom-out">-</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h6 class="m-0">Pie Chart d'analyse des ages des athlètes</h6>
+                            <div class="form-inline"></div>
+                                
+                        </div>
+                        <div class="card-body">
+                            
+                                <div id="pie-chart"></div>
+                                <div id="tooltip3"></div>
+                                <div id="legend3"></div>
+                            <iframe src="test.html" width="700" height="400" scrolling="yes"></iframe>
+    
+                        
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12 col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header">Distrubtion des Spots les plus fréquants</div>
+                        <div class="card-body">
+                            <div id="svg"></div>
+                            <div id="graph"></div>
+                            <script>var d3;
+                                var data = 'sport.csv';
+                                
+                                
+                                d3.csv(data, function(dataset) {
+                                  data = dataset;
+                                  buildChart();
+                                });
+                                
+                                function buildChart() {
+                                  
+                                  /* ===== SET UP CHART =====*/
+                                  
+                                  var barSpacing = 55;
+                                  var barThickness = 45;
+                                  var vertPadding = 15;
+                                  var h = (barSpacing) * data.length + vertPadding;
+                                  
+                                  var svg = d3.select('#graph')
+                                    .append('svg')
+                                    .attr('width', 850)
+                                    .attr('height', h+20);
+                                  
+                                  var xScale = d3.scaleLinear()
+                                    .domain([0, 2500])
+                                    .range([0,850]);
+                                  
+                                  var yScale = d3.scaleLinear()
+                                    .domain([0, data.length])
+                                    .range([h,0]);
+                                  
+                                  var xAxis = d3.axisBottom()
+                                    .scale(xScale)
+                                    .ticks(10)
+                                    
+                                  var yAxis = d3.axisRight()
+                                    .scale(yScale)
+                                    .ticks(0);
+                                  
+                                  var group = svg.selectAll('g')
+                                    .data(data)
+                                    .enter()
+                                    .append('g');
+                                  
+                                  
+                                  /* ===== BARS =====*/ 
+                                
+                                  var bars = group
+                                    .append('rect')
+                                    .attr('y', function(d, i) {
+                                      return i * (barSpacing) + vertPadding
+                                    })
+                                    /* bar width is set in opening animation */
+                                    // .attr('width', function(d) {
+                                    //   return xScale(d.Budget);
+                                    // })
+                                    .attr('height', function(d) {
+                                      return h - yScale(barThickness/barSpacing);
+                                    })
+                                    .attr('fill', function (d,i) {
+                                      return setBarColors(d,i);
+                                    });  
+                                  
+                                  /* ===== AXES =====*/
+                                  
+                                  svg.append('g')
+                                    .style('font', '16px arial')
+                                    .attr('transform', 'translate(0,' + h + ')')
+                                    .call(xAxis);
+                                
+                                  svg.append('g')
+                                    .call(yAxis);
+                                
+                                   /* ===== BAR TEXT =====*/
+                                  
+                                  var textLabels = group
+                                    .append('text')
+                                    .text(function (d) {
+                                      return d.Area;
+                                    })
+                                    .attr('text-anchor', 'start')
+                                    .attr('x', function(d) {
+                                      return xScale(d.Budget * 0.1) + 20;
+                                    })
+                                    .attr('y', function(d, i) {
+                                      return i * (barSpacing) + vertPadding + (barSpacing /2);
+                                    })
+                                    .attr('font-family', 'arial, sans-serif')
+                                    .attr('font-size', '18px')
+                                    .attr('fill', '#333')
+                                    .attr('opacity', 0)
+                                    .transition().duration(5000)
+                                    .attr('opacity', 1)
+                                  
+                                  
+                                   /* ===== HOVER EFFECTS =====*/  
+                                
+                                  group.on('mouseover', function(d){
+                                    d3.select(this)
+                                      .select('rect')
+                                      .transition().duration(250)
+                                      .style('fill', '#ff8a65');      
+                                  })
+                                    .append('title')
+                                    .text(function (d) {
+                                        return d.Budget + ' athlètes';
+                                  })
+                                  
+                                  group.on('mouseout', function(d, i){
+                                      d3.select(this)
+                                      .select('rect')
+                                      .transition().duration(2000)
+                                      .style('fill', function(d,i){
+                                        return setBarColors(d);
+                                    });
+                                  })
+                                  
+                                /* ===== ANIMATION =====*/    
+                                  
+                                  bars
+                                    .transition().duration(500) 
+                                    .attr('width', function(d) {
+                                        return xScale(d.Budget);
+                                      }); 
+                                }
+                                
+                                /* ===== BAR COLORS =====*/ 
+                                
+                                function setBarColors (d,i) {
+                                    var colors = ['#64b5f6','#4dd0e1','#4fc3f7','#4db6ac','#0283AF','#7EBC89','#2f6595','#c6a7e2','#558ec1','#32c05d','#549cb3'];
+                                    return colors[i];
+                                };
+                                
+                                </script>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.0.0/dist/d3.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="map.js"></script>
+
+    
+    <script src="dash.js></script>
+    <script src="pie.js"></script>
+    <script src="bar.js"></script>
+    <script src="bar3.js"></script>
+
+    <script src="interactive.js"></script>
+   
+</body>
+</html>
